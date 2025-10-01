@@ -109,12 +109,20 @@ module.exports = {
                 // Play immediately using enhanced streaming system
                 const unifiedTrack = toUnifiedTrack(song, 'fallback');
                 queue.nowPlaying = unifiedTrack;
+                queue.lastActivity = Date.now();
+                
                 const success = await playFallbackTrack(interaction.guild.id, song);
                 
                 if (success) {
                     return interaction.editReply(`🎵 अब play हो रहा है: **${title}**`);
                 } else {
-                    return interaction.editReply('❌ गाना play करने में error हुई! दूसरा गाना try करें।');
+                    queue.nowPlaying = null;
+                    const { cleanupFallbackPlayer } = require('../src/MusicPlayer');
+                    cleanupFallbackPlayer(interaction.guild.id);
+                    return interaction.editReply('❌ गाना play करने में error हुई! Stream download fail हो गया। कृपया:\n' +
+                        '• दूसरा गाना try करें\n' +
+                        '• YouTube URL directly दें\n' +
+                        '• कुछ देर बाद try करें');
                 }
             }
 

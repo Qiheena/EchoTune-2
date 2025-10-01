@@ -206,17 +206,54 @@ async function playFallbackTrack(guildId, track) {
         }
 
         // Create audio resource from stream URL or stream object
-        const resource = typeof stream === 'string' 
-            ? createAudioResource(stream, { inlineVolume: true })
-            : createAudioResource(stream, { inputType: stream.type, inlineVolume: true });
+        let resource;
+        try {
+            if (typeof stream === 'string') {
+                const axios = require('axios');
+                
+                console.log(`[${guildId}] 📥 Creating HTTP stream from URL...`);
+                const response = await axios({
+                    method: 'get',
+                    url: stream,
+                    responseType: 'stream',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Range': 'bytes=0-'
+                    }
+                });
+                
+                resource = createAudioResource(response.data, { 
+                    inlineVolume: true,
+                    inputType: 'arbitrary'
+                });
+                console.log(`[${guildId}] ✅ Audio resource created from URL`);
+            } else {
+                resource = createAudioResource(stream, { 
+                    inputType: stream.type, 
+                    inlineVolume: true 
+                });
+                console.log(`[${guildId}] ✅ Audio resource created from stream`);
+            }
+        } catch (resourceError) {
+            console.error(`[${guildId}] ❌ Failed to create audio resource: ${resourceError.message}`);
+            cleanupGarbageFiles(guildId);
+            return false;
+        }
         
         const queue = global.getQueue(guildId);
         if (resource.volume) {
             resource.volume.setVolume(queue.volume / 100);
         }
 
-        player.play(resource);
-        return true;
+        try {
+            player.play(resource);
+            console.log(`[${guildId}] ▶️ Started playing audio`);
+            return true;
+        } catch (playError) {
+            console.error(`[${guildId}] ❌ Player.play() failed: ${playError.message}`);
+            cleanupGarbageFiles(guildId);
+            return false;
+        }
 
     } catch (error) {
         console.error(`[${guildId}] Playback error:`, error.message);
