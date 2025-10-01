@@ -8,15 +8,19 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 01, 2025)
 
-**🚀 LATEST UPDATE - CRITICAL BUG FIXES & NEW FEATURES:**
-- ✅ **FIXED AUTO-DISCONNECT BUG** - Bot no longer leaves after joining! HTTP stream handling fixed for yt-dlp URLs
-- ✅ **Improved Error Handling** - Better error messages in Hindi/English with cleanup on failure
+**🚀 LATEST UPDATE - OPTIMIZED STREAMING SYSTEM:**
+- ✅ **Fast Response Time** - Removed unnecessary delays for instant playback
+- ✅ **Dual-Method Streaming** - Optimized fallback chain: play-dl → ytdl-core
+- ✅ **Spotify/SoundCloud Support** - Auto-converts non-YouTube URLs to YouTube equivalents
+- ✅ **Smart Timeout Handling** - 8-second timeout on play-dl with automatic fallback
+- ✅ **Reliable Playback** - Battle-tested libraries with proper error handling
+
+**🎵 PREVIOUS UPDATES:**
 - ✅ **New Command: /lyrics** - Get lyrics for current or specified songs using lyrics.ovh API
 - ✅ **New Command: /replay** - Restart current song from beginning
 - ✅ **New Command: /favorite** - Save, list, play, and manage favorite songs with SQLite persistence
-- ✅ **Updated Help Command** - Reorganized with proper formatting and accurate feature documentation
 - ✅ **Enhanced Logging** - Comprehensive logging throughout playback flow for easier debugging
-- ✅ **Axios Integration** - Now using axios for robust HTTP stream handling from yt-dlp
+- ✅ **Fixed Voice Connection Issues** - Added proper Ready state waiting (20s timeout)
 
 **🔧 PREVIOUS FIXES:**
 - ✅ **Fixed Voice Connection Issues** - Added proper Ready state waiting (20s timeout)

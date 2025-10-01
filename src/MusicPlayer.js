@@ -104,13 +104,9 @@ async function playFallbackTrack(guildId, track) {
 
     try {
         let stream = null;
-        const youtubedl = require('youtube-dl-exec');
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const execAsync = promisify(exec);
         
-        // Ensure we have a valid URL
-        if (!track.url || track.url.includes('youtube.com') || track.url.includes('youtu.be')) {
+        // Convert non-YouTube URLs to YouTube (for Spotify, SoundCloud, etc.)
+        if (!track.url || (!track.url.includes('youtube.com') && !track.url.includes('youtu.be'))) {
             try {
                 const searchQuery = track.title || track.info?.title || 'music';
                 const { getCachedSearchResults } = require('../utils/CacheManager');
@@ -119,7 +115,7 @@ async function playFallbackTrack(guildId, track) {
                 if (searchResults && searchResults.length > 0) {
                     const video = searchResults[0];
                     track.url = video.url;
-                    console.log(`[${guildId}] Found URL: ${video.title}`);
+                    console.log(`[${guildId}] Converted to YouTube: ${video.title}`);
                 }
             } catch (error) {
                 console.log(`[${guildId}] Search fallback failed: ${error.message}`);
