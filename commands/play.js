@@ -23,7 +23,7 @@ function parseCookiesTxt(filePath) {
 }
 
 // Load cookies once at startup
-const cookiesPath = path.join(__dirname, 'cookies.txt');
+const cookiesPath = path.join(__dirname, "..", 'cookies.txt');
 const cookies = parseCookiesTxt(cookiesPath);
 
 module.exports = {
