@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
-const ytdl = require('ytdl-core');
+// const ytdl = require('ytdl-core');
+const ytdl = require('@distube/ytdl-core');
 const fs = require('fs');
 
 // Helper function to parse cookies.txt
