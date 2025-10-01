@@ -44,15 +44,16 @@
 - [ ] **Name**: Unique service name दिया (e.g., `my-discord-music-bot`)
 - [ ] **Region**: नजदीकी region select किया (Singapore recommended)
 - [ ] **Branch**: `main` या `master` select किया
-- [ ] **Runtime**: Node detected हुआ
-- [ ] **Build Command**: `npm ci --only=production`
-- [ ] **Start Command**: `npm start`
+- [ ] **Environment**: Docker selected (Dockerfile use होगी)
+- [ ] **Dockerfile Path**: `./Dockerfile` (automatic detect)
+- [ ] **Plan**: Free selected
 
 ### Step 4: Environment Variables
 सभी environment variables add किए:
 - [ ] `DISCORD_TOKEN` = (आपका bot token)
 - [ ] `NODE_ENV` = `production`
 - [ ] `PORT` = `3000`
+- [ ] `DB_PATH` = `/data/ragabot.db` (database persistence के लिए)
 - [ ] `LOG_LEVEL` = `info` (optional)
 
 **⚠️ Important**: DISCORD_TOKEN को secret/hidden field के रूप में add करें!
@@ -60,6 +61,7 @@
 ### Step 5: Advanced Settings
 - [ ] **Auto-Deploy**: Enabled (automatic deployments के लिए)
 - [ ] **Health Check Path**: `/health` set किया
+- [ ] **Persistent Disk**: 1GB disk add किया `/data` mount path पर (database के लिए)
 
 ### Step 6: Deploy
 - [ ] "Create Web Service" button click किया

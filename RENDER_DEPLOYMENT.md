@@ -39,14 +39,14 @@ Render automatically `render.yaml` file detect कर लेगा। अगर 
 - **Name**: `discord-music-bot` (या कोई भी unique name)
 - **Region**: `Singapore` (या nearest region)
 - **Branch**: `main`
-- **Runtime**: `Node`
-- **Build Command**: `npm ci --only=production`
-- **Start Command**: `npm start`
+- **Environment**: `Docker` (Dockerfile का use करेगा)
+- **Dockerfile Path**: `./Dockerfile` (automatic detect हो जाएगा)
 - **Plan**: `Free`
 
 **Advanced Settings:**
 - **Auto-Deploy**: `Yes` (हर GitHub push पर automatically deploy होगा)
 - **Health Check Path**: `/health`
+- **Persistent Disk**: `1GB` disk add करें `/data` path पर (database के लिए)
 
 ### Step 4: Environment Variables Setup
 
@@ -57,20 +57,33 @@ Render dashboard में **Environment** tab पर जाकर ये enviro
 | `DISCORD_TOKEN` | Your Discord bot token | ✅ Yes |
 | `NODE_ENV` | `production` | ✅ Yes |
 | `PORT` | `3000` | ✅ Yes |
+| `DB_PATH` | `/data/ragabot.db` | ✅ Yes (for persistence) |
 | `LOG_LEVEL` | `info` | Optional |
 
 **⚠️ Important:** `DISCORD_TOKEN` को **secret** type के रूप में add करें (hide value option use करें)।
 
-### Step 5: System Dependencies (Automatic)
+### Step 5: System Dependencies (Automatic via Docker)
 
-यह bot **Dockerfile** use करता है, इसलिए Render automatically ये system dependencies install करेगा:
-- ✅ FFmpeg (audio processing के लिए)
+यह bot **Docker environment** use करता है, इसलिए Render automatically ये system dependencies install करेगा:
+- ✅ FFmpeg (audio processing और filters के लिए)
 - ✅ Python3 + yt-dlp (YouTube downloads के लिए)
-- ✅ Node.js 20 LTS
+- ✅ Node.js 20 LTS (production-ready)
 
-**Render automatically Dockerfile detect करके use करेगा!**
+**Render yaml file में `env: docker` set है, इसलिए Dockerfile automatically use होगी!**
 
-### Step 6: Deploy!
+### Step 6: Persistent Storage (Database)
+
+**Important**: SQLite database को persist करने के लिए disk add करें:
+1. Render dashboard में **Disks** section में जाएं
+2. New Disk create करें:
+   - **Name**: `discord-bot-data`
+   - **Mount Path**: `/data`
+   - **Size**: `1 GB` (Free plan पर available)
+3. Database path `/data/ragabot.db` पर set होगी automatically
+
+**Note**: `render.yaml` में disk पहले से configured है!
+
+### Step 7: Deploy!
 
 1. सभी settings verify करने के बाद **"Create Web Service"** button पर click करें
 2. Render build और deployment process start करेगा

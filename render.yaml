@@ -1,11 +1,10 @@
 services:
   - type: web
     name: discord-music-bot
-    runtime: node
+    env: docker
     region: singapore
     plan: free
-    buildCommand: npm ci --only=production
-    startCommand: npm start
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,5 +14,11 @@ services:
         value: 3000
       - key: LOG_LEVEL
         value: info
+      - key: DB_PATH
+        value: /data/ragabot.db
     healthCheckPath: /health
     autoDeploy: true
+    disk:
+      name: discord-bot-data
+      mountPath: /data
+      sizeGB: 1
