@@ -104,6 +104,7 @@ async function playFallbackTrack(guildId, track) {
 
     try {
         let stream = null;
+        const youtubedl = require('youtube-dl-exec');
         
         // Convert non-YouTube URLs to YouTube (for Spotify, SoundCloud, etc.)
         if (!track.url || (!track.url.includes('youtube.com') && !track.url.includes('youtu.be'))) {
@@ -127,23 +128,61 @@ async function playFallbackTrack(guildId, track) {
             return false;
         }
 
-        // Method 1: Try play-dl first (fast and reliable for most cases)
+        // Method 1: Try yt-dlp to get direct URL (bypasses YouTube blocks)
         try {
-            console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
+            console.log(`[${guildId}] 🎵 Attempting yt-dlp for: ${track.title}`);
             
-            const playStream = await Promise.race([
-                play.stream(track.url, { quality: 2 }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('play-dl timeout')), 8000))
+            const info = await Promise.race([
+                youtubedl(track.url, {
+                    dumpSingleJson: true,
+                    noCheckCertificates: true,
+                    noWarnings: true,
+                    preferFreeFormats: true,
+                    addHeader: [
+                        'referer:youtube.com',
+                        'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    ]
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('yt-dlp timeout')), 10000))
             ]);
             
-            stream = playStream.stream;
-            stream.type = playStream.type;
-            console.log(`[${guildId}] ✅ Got stream from play-dl`);
+            if (info && info.url) {
+                const axios = require('axios');
+                const response = await axios({
+                    method: 'get',
+                    url: info.url,
+                    responseType: 'stream',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                });
+                
+                stream = response.data;
+                console.log(`[${guildId}] ✅ Got stream from yt-dlp`);
+            }
         } catch (error) {
-            console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
+            console.log(`[${guildId}] ❌ yt-dlp failed: ${error.message}`);
         }
 
-        // Method 2: Fallback to ytdl-core with optimized settings
+        // Method 2: Try play-dl as backup
+        if (!stream) {
+            try {
+                console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
+                
+                const playStream = await Promise.race([
+                    play.stream(track.url, { quality: 2 }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('play-dl timeout')), 8000))
+                ]);
+                
+                stream = playStream.stream;
+                stream.type = playStream.type;
+                console.log(`[${guildId}] ✅ Got stream from play-dl`);
+            } catch (error) {
+                console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
+            }
+        }
+
+        // Method 3: Last resort - ytdl-core
         if (!stream) {
             try {
                 console.log(`[${guildId}] 🎵 Attempting ytdl-core for: ${track.title}`);
