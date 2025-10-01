@@ -1,20 +1,23 @@
 # Use Node.js 20 LTS as base image
 FROM node:20-slim
 
-# Install system dependencies for audio processing
+# Install system dependencies for audio processing + build tools
 RUN apt-get update && apt-get install -y \
     python3 \
-    python3-venv \
+    python3-pip \
     ffmpeg \
     wget \
     ca-certificates \
+    make \
+    g++ \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a Python virtual environment
+# Create virtual environment for Python packages
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install yt-dlp inside the venv
+# Install yt-dlp for YouTube downloads
 RUN pip install --no-cache-dir yt-dlp
 
 # Set working directory
