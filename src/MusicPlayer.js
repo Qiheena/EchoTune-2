@@ -128,91 +128,38 @@ async function playFallbackTrack(guildId, track) {
             return false;
         }
 
-        // Method 1: Try yt-dlp (most reliable for YouTube) - Optimized for speed
+        // Method 1: Try ytdl-core first (works best with Discord voice)
         try {
-            console.log(`[${guildId}] 🎵 Attempting yt-dlp for: ${track.title}`);
-            
-            // Use -g flag for fast URL extraction without full JSON parsing
-            const { execFile } = require('child_process');
-            const { promisify } = require('util');
-            const execFilePromise = promisify(execFile);
-            
-            try {
-                const { stdout } = await execFilePromise('yt-dlp', [
-                    '-g',
-                    '-f', 'bestaudio/best',
-                    '--no-check-certificate',
-                    '--no-warnings',
-                    track.url
-                ], { timeout: 10000 }); // 10 second timeout
-                
-                if (stdout && stdout.trim()) {
-                    stream = stdout.trim().split('\n')[0]; // First URL is audio
-                    console.log(`[${guildId}] ✅ Got stream URL from yt-dlp (fast method)`);
-                }
-            } catch (fastError) {
-                // Fallback to JSON method if fast method fails
-                console.log(`[${guildId}] Fast yt-dlp failed, trying JSON method...`);
-                const streamUrl = await youtubedl(track.url, {
-                    dumpSingleJson: true,
-                    noCheckCertificates: true,
-                    noWarnings: true,
-                    preferFreeFormats: true,
-                    addHeader: [
-                        'referer:youtube.com',
-                        'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    ]
+            console.log(`[${guildId}] 🎵 Attempting ytdl-core for: ${track.title}`);
+            const info = await ytdl.getBasicInfo(track.url);
+            if (info && info.videoDetails) {
+                stream = ytdl(track.url, {
+                    filter: 'audioonly',
+                    quality: 'highestaudio',
+                    highWaterMark: 1 << 25,
+                    dlChunkSize: 0
                 });
-
-                if (streamUrl && streamUrl.url) {
-                    stream = streamUrl.url;
-                    console.log(`[${guildId}] ✅ Got stream URL from yt-dlp`);
-                } else if (streamUrl && streamUrl.formats) {
-                    const audioFormat = streamUrl.formats.find(f => 
-                        f.acodec && f.acodec !== 'none' && (!f.vcodec || f.vcodec === 'none')
-                    ) || streamUrl.formats.find(f => f.acodec && f.acodec !== 'none');
-                    
-                    if (audioFormat && audioFormat.url) {
-                        stream = audioFormat.url;
-                        console.log(`[${guildId}] ✅ Got audio stream from yt-dlp format`);
-                    }
-                }
+                console.log(`[${guildId}] ✅ Got stream from ytdl-core`);
             }
         } catch (error) {
-            console.log(`[${guildId}] ❌ yt-dlp failed: ${error.message}`);
+            console.log(`[${guildId}] ❌ ytdl-core failed: ${error.message}`);
         }
 
-        // Method 2: Fallback to play-dl (if yt-dlp fails)
+        // Method 2: Fallback to play-dl (if ytdl-core fails)
         if (!stream) {
             try {
+                console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
                 const info = await play.video_info(track.url);
                 if (info && info.video_details) {
                     const playStream = await play.stream(track.url, {
                         quality: 2,
                         discordPlayerCompatibility: true
                     });
-                    stream = playStream;
-                    console.log(`[${guildId}] ✅ Playing with play-dl: ${track.title}`);
+                    stream = playStream.stream;
+                    console.log(`[${guildId}] ✅ Got stream from play-dl`);
                 }
             } catch (error) {
                 console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
-            }
-        }
-
-        // Method 3: Final fallback to ytdl-core
-        if (!stream) {
-            try {
-                const info = await ytdl.getBasicInfo(track.url);
-                if (info && info.videoDetails) {
-                    stream = ytdl(track.url, {
-                        filter: 'audioonly',
-                        quality: 'highestaudio',
-                        highWaterMark: 1 << 25
-                    });
-                    console.log(`[${guildId}] ✅ Playing with ytdl-core: ${track.title}`);
-                }
-            } catch (error) {
-                console.log(`[${guildId}] ❌ ytdl-core failed: ${error.message}`);
             }
         }
 
@@ -222,44 +169,11 @@ async function playFallbackTrack(guildId, track) {
             return false;
         }
 
-        // Create audio resource from stream URL or stream object
+        // Create audio resource from stream object
         let resource;
         try {
-            if (typeof stream === 'string') {
-                const axios = require('axios');
-                
-                console.log(`[${guildId}] 📥 Creating HTTP stream from URL...`);
-                const response = await axios({
-                    method: 'get',
-                    url: stream,
-                    responseType: 'stream',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Range': 'bytes=0-'
-                    },
-                    timeout: 30000
-                });
-                
-                console.log(`[${guildId}] 📊 Response status: ${response.status}, Content-Type: ${response.headers['content-type']}`);
-                
-                response.data.on('error', (streamError) => {
-                    console.error(`[${guildId}] ❌ Stream error: ${streamError.message}`);
-                });
-                
-                response.data.on('end', () => {
-                    console.log(`[${guildId}] 🏁 Stream ended`);
-                });
-                
-                resource = createAudioResource(response.data, { 
-                    inlineVolume: true,
-                    inputType: 'arbitrary',
-                    metadata: {
-                        title: track.title,
-                        url: track.url
-                    }
-                });
-                console.log(`[${guildId}] ✅ Audio resource created from URL`);
-            } else {
+            if (stream.type) {
+                // play-dl stream
                 resource = createAudioResource(stream, { 
                     inputType: stream.type, 
                     inlineVolume: true,
@@ -268,12 +182,18 @@ async function playFallbackTrack(guildId, track) {
                         url: track.url
                     }
                 });
-                console.log(`[${guildId}] ✅ Audio resource created from stream`);
+                console.log(`[${guildId}] ✅ Audio resource created from play-dl stream`);
+            } else {
+                // ytdl-core stream
+                resource = createAudioResource(stream, { 
+                    inlineVolume: true,
+                    metadata: {
+                        title: track.title,
+                        url: track.url
+                    }
+                });
+                console.log(`[${guildId}] ✅ Audio resource created from ytdl-core stream`);
             }
-            
-            resource.playStream.on('error', (streamError) => {
-                console.error(`[${guildId}] ❌ PlayStream error: ${streamError.message}`);
-            });
             
         } catch (resourceError) {
             console.error(`[${guildId}] ❌ Failed to create audio resource: ${resourceError.message}`);
