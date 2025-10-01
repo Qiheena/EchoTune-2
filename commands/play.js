@@ -1,73 +1,69 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { joinVoiceChannel } = require('@discordjs/voice');
-const ytdl = require('@distube/ytdl-core');
-const fs = require('fs');
-const path = require('path');
-
-// Helper function to parse cookies.txt
-function parseCookiesTxt(filePath) {
-    const cookies = [];
-    try {
-        const content = fs.readFileSync(filePath, 'utf8');
-        content.split(/\r?\n/).forEach(line => {
-            if (!line || line.startsWith('#')) return;
-            const parts = line.split('\t');
-            if (parts.length >= 7) {
-                cookies.push(`${parts[5]}=${parts[6]}`);
-            }
-        });
-    } catch (err) {
-        console.error(`[ERROR] Failed to read cookies.txt: ${err.message}`);
-    }
-    return cookies.join('; ');
-}
-
-// Load cookies once at startup
-const cookiesPath = path.join(__dirname, "..", 'cookies.txt');
-const cookies = parseCookiesTxt(cookiesPath);
+const playdl = require('play-dl');
+const spotifyUtil = require('./spotify'); // Adjust the path accordingly
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('play')
-        .setDescription('Play a song from YouTube URL or by name')
-        .addStringOption(option =>
-            option.setName('query')
-                .setDescription('YouTube URL or song name')
-                .setRequired(true)
-        ),
+  data: new SlashCommandBuilder()
+    .setName('play')
+    .setDescription('Play a song by Spotify best match or from YouTube link via Spotify')
+    .addStringOption(option =>
+      option.setName('query')
+        .setDescription('Spotify song name or YouTube URL')
+        .setRequired(true)
+    ),
 
-    async execute(interaction) {
-        await interaction.deferReply();
+  async execute(interaction) {
+    await interaction.deferReply();
 
-        const member = interaction.member;
-        if (!member) return interaction.editReply('❌ Member info not available.');
+    const member = interaction.member;
+    if (!member) return interaction.editReply('❌ Member info not available.');
 
-        const voiceChannel = member.voice?.channel;
-        if (!voiceChannel) return interaction.editReply('❌ Join a voice channel first!');
+    const voiceChannel = member.voice?.channel;
+    if (!voiceChannel) return interaction.editReply('❌ Join a voice channel first!');
 
-        const query = interaction.options.getString('query');
-        const distube = global.distube;
+    const query = interaction.options.getString('query');
+    const distube = global.distube;
+    if (!distube) return interaction.editReply('❌ Bot not ready. Try again later.');
 
-        if (!distube) return interaction.editReply('❌ Bot not ready. Try again later.');
+    try {
+      // Detect if input is YouTube playlist link
+      if (playdl.yt_validate(query) === 'playlist') {
+        return interaction.editReply('⏳ YouTube playlists are currently not supported. Please try a single video or song name.');
+      }
 
-        try {
-            await distube.play(voiceChannel, query, {
-                member,
-                textChannel: interaction.channel,
-                ytdlOptions: {
-                    quality: 'highestaudio',
-                    filter: 'audioonly',
-                    highWaterMark: 1 << 25,
-                    requestOptions: {
-                        headers: cookies ? { cookie: cookies } : {} // fallback
-                    }
-                }
-            });
+      let searchTitle;
 
-            return interaction.editReply(`🔍 Searching and playing: **${query}**`);
-        } catch (error) {
-            console.error('[ERROR] Play command:', error);
-            return interaction.editReply(`❌ Error: ${error.message}`);
-        }
+      if (playdl.yt_validate(query) === 'video') {
+        // YouTube video URL case: fetch title from play-dl
+        const info = await playdl.video_basic_info(query);
+        searchTitle = info.video_details.title;
+      } else {
+        // Assume direct song name or Spotify URL input - try to extract or use as is
+        searchTitle = query;
+      }
+
+      // Get Spotify client
+      const spotify = await spotifyUtil.getUncachableSpotifyClient();
+
+      // Spotify search track, limit 1 for best match
+      const searchResults = await spotify.search.searchTracks(searchTitle, { limit: 1 });
+
+      if (searchResults.tracks.items.length === 0) {
+        return interaction.editReply(`❌ No matching Spotify track found for "${searchTitle}". Try another query.`);
+      }
+
+      // Play best matched Spotify track URL using Distube
+      const track = searchResults.tracks.items[0];
+      await distube.play(voiceChannel, track.external_urls.spotify, {
+        member,
+        textChannel: interaction.channel
+      });
+
+      return interaction.editReply(`🎶 Playing from Spotify: **${track.name}** by **${track.artists[0].name}**`);
+
+    } catch (error) {
+      console.error('[ERROR] Play command:', error);
+      return interaction.editReply(`❌ Error playing track: ${error.message}`);
     }
+  }
 };
