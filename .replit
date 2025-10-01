@@ -1,0 +1,43 @@
+modules = ["nodejs-20", "python-3.11", "java-graalvm22.3"]
+[agent]
+expertMode = true
+integrations = ["spotify:1.0.0"]
+
+[nix]
+channel = "stable-25_05"
+packages = ["ffmpeg", "yt-dlp"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Discord Music Bot"
+
+[[workflows.workflow]]
+name = "Discord Music Bot"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm start"
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 8008
+externalPort = 8008
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
