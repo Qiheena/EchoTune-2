@@ -2,6 +2,32 @@ const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const ytdl = require('@distube/ytdl-core');
 const YouTube = require('youtube-sr').default;
+const fs = require('fs');
+
+// Helper: Parse cookies.txt (Netscape format) into array for ytdl.createAgent
+function parseCookiesTxt(filePath) {
+    const cookies = [];
+    const content = fs.readFileSync(filePath, 'utf8');
+    content.split('
+').forEach(line => {
+        // Ignore comments and empty lines
+        if (!line || line.startsWith('#')) return;
+        const parts = line.split('\t');
+        if (parts.length >= 7) {
+            cookies.push({
+                domain: parts[0],
+                path: parts[2],
+                name: parts[5],
+                value: parts[6],
+                // Additional fields can be set if needed
+            });
+        }
+    });
+    return cookies;
+}
+
+const cookiesArray = parseCookiesTxt('cookies.txt');
+const agent = ytdl.createAgent(cookiesArray);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,7 +46,7 @@ module.exports = {
         if (!member) {
             return interaction.editReply('❌ Member information not available. Please try again.');
         }
-        
+
         const voiceChannel = member.voice?.channel;
         const query = interaction.options.getString('query');
 
@@ -30,17 +56,19 @@ module.exports = {
 
         try {
             const distube = global.distube;
-            
+
             await distube.play(voiceChannel, query, {
                 member: member,
-                textChannel: interaction.channel
+                textChannel: interaction.channel,
+                ytdlOptions: { agent } // cookies-enabled agent yahan set karo
             });
-            
+
             return interaction.editReply(`🔍 Searching: **${query}**`);
 
         } catch (error) {
             console.error('Play command error:', error);
-            return interaction.editReply(`❌ Error: ${error.message}\nकृपया दूसरा गाना try करें।`);
+            return interaction.editReply(`❌ Error: ${error.message}
+कृपया दूसरा गाना try करें।`);
         }
     },
 };
