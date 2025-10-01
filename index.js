@@ -12,6 +12,7 @@ const path = require('path');
 
 // Start health check server for deployment
 require('./utils/health');
+require('./src/server');
 
 // Initialize 24/7 Keep-Alive System
 const KeepAliveSystem = require('./utils/KeepAlive');
