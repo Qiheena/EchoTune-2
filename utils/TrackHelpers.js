@@ -84,7 +84,31 @@ function createNowPlayingEmbed(track, queue, guildSettings) {
                 .setStyle(ButtonStyle.Secondary)
         );
 
-    return { embeds: [embed], components: [row1, row2] };
+    const row3 = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('music_volume_down')
+                .setLabel('Volume -')
+                .setEmoji('🔉')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('music_replay')
+                .setLabel('Replay')
+                .setEmoji('🔄')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('music_volume_up')
+                .setLabel('Volume +')
+                .setEmoji('🔊')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('music_clear_queue')
+                .setLabel('Clear Queue')
+                .setEmoji('🗑️')
+                .setStyle(ButtonStyle.Danger)
+        );
+
+    return { embeds: [embed], components: [row1, row2, row3] };
 }
 
 // Format duration helper

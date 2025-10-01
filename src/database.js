@@ -36,7 +36,7 @@ try {
 // Initialize tables
 function initDatabase() {
     try {
-    // Guild settings table
+    // Guild settings table with enhanced features
     db.exec(`
         CREATE TABLE IF NOT EXISTS guild_settings (
             guild_id TEXT PRIMARY KEY,
@@ -44,10 +44,35 @@ function initDatabase() {
             volume INTEGER DEFAULT 50,
             autoplay BOOLEAN DEFAULT 0,
             loop_mode INTEGER DEFAULT 0,
+            language TEXT DEFAULT 'hi',
+            dj_mode BOOLEAN DEFAULT 0,
+            dj_role_id TEXT DEFAULT NULL,
+            announce_channel_id TEXT DEFAULT NULL,
+            twentyfour_seven BOOLEAN DEFAULT 0,
+            default_filter TEXT DEFAULT 'normal',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+    
+    try {
+        db.exec(`ALTER TABLE guild_settings ADD COLUMN language TEXT DEFAULT 'hi'`);
+    } catch (e) {}
+    try {
+        db.exec(`ALTER TABLE guild_settings ADD COLUMN dj_mode BOOLEAN DEFAULT 0`);
+    } catch (e) {}
+    try {
+        db.exec(`ALTER TABLE guild_settings ADD COLUMN dj_role_id TEXT DEFAULT NULL`);
+    } catch (e) {}
+    try {
+        db.exec(`ALTER TABLE guild_settings ADD COLUMN announce_channel_id TEXT DEFAULT NULL`);
+    } catch (e) {}
+    try {
+        db.exec(`ALTER TABLE guild_settings ADD COLUMN twentyfour_seven BOOLEAN DEFAULT 0`);
+    } catch (e) {}
+    try {
+        db.exec(`ALTER TABLE guild_settings ADD COLUMN default_filter TEXT DEFAULT 'normal'`);
+    } catch (e) {}
 
     // User preferences table
     db.exec(`

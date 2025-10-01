@@ -164,5 +164,111 @@ module.exports = {
         SPOTIFY: 'spsearch',
         SOUNDCLOUD: 'scsearch',
         DEFAULT: 'ytsearch'
+    },
+
+    // Advanced Features
+    FEATURES: {
+        ENABLE_FILTERS: true,
+        ENABLE_DJ_MODE: true,
+        ENABLE_24_7_MODE: true,
+        ENABLE_LYRICS: true,
+        ENABLE_FAVORITES: true,
+        ENABLE_PLAYLISTS: true,
+        ENABLE_SPOTIFY: true,
+        ENABLE_SOUNDCLOUD: true,
+        ENABLE_VOTING: false,
+        MAX_PLAYLIST_SIZE: 100,
+        MAX_SEARCH_RESULTS: 10,
+        ENABLE_AUTO_PAUSE: false,
+        ENABLE_AUTO_DISCONNECT: false
+    },
+
+    // Cache Configuration
+    CACHE: {
+        SEARCH_RESULTS_TTL: 3600000,
+        GUILD_SETTINGS_TTL: 1800000,
+        MAX_SEARCH_CACHE_SIZE: 500,
+        MAX_GUILD_CACHE_SIZE: 1000,
+        CLEANUP_INTERVAL: 600000,
+        ENABLE_CACHE: true
+    },
+
+    // Audio Filters Configuration
+    FILTERS: {
+        bassboost: {
+            name: 'Bass Boost',
+            ffmpeg: '-af "bass=g=20,dynaudnorm=f=200"'
+        },
+        nightcore: {
+            name: 'Nightcore',
+            ffmpeg: '-af "asetrate=48000*1.25,aresample=48000,atempo=1.06"'
+        },
+        slowed: {
+            name: 'Slowed + Reverb',
+            ffmpeg: '-af "asetrate=48000*0.8,aresample=48000,atempo=0.9,aecho=0.8:0.9:1000:0.3"'
+        },
+        '8d': {
+            name: '8D Audio',
+            ffmpeg: '-af "apulsator=hz=0.08"'
+        },
+        vaporwave: {
+            name: 'Vaporwave',
+            ffmpeg: '-af "asetrate=48000*0.9,aresample=48000,atempo=0.85"'
+        },
+        soft: {
+            name: 'Soft',
+            ffmpeg: '-af "equalizer=f=1000:width_type=h:width=200:g=-5"'
+        },
+        loud: {
+            name: 'Loud',
+            ffmpeg: '-af "volume=1.5,dynaudnorm=f=150"'
+        },
+        normal: {
+            name: 'Normal',
+            ffmpeg: ''
+        }
+    },
+
+    // Deployment Configuration
+    DEPLOYMENT: {
+        PORT: process.env.PORT || 3000,
+        HEALTH_CHECK_INTERVAL: 300000,
+        ENABLE_HEALTH_CHECK: true,
+        RESTART_ON_CRASH: true,
+        LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+        ENVIRONMENT: process.env.NODE_ENV || 'production'
+    },
+
+    // Error Handling
+    ERROR_HANDLING: {
+        RETRY_ATTEMPTS: 3,
+        RETRY_DELAY: 2000,
+        TIMEOUT: 30000,
+        ENABLE_ERROR_REPORTING: true,
+        FALLBACK_ON_ERROR: true
+    },
+
+    // Performance Settings
+    PERFORMANCE: {
+        MAX_CONCURRENT_STREAMS: 10,
+        STREAM_BUFFER_SIZE: 1024 * 1024,
+        ENABLE_COMPRESSION: true,
+        MAX_MEMORY_USAGE: 512,
+        GARBAGE_COLLECTION_INTERVAL: 900000
+    },
+
+    // Rate Limiting
+    RATE_LIMIT: {
+        COMMANDS_PER_USER: 5,
+        COMMANDS_WINDOW: 10000,
+        ENABLE_RATE_LIMIT: true
+    },
+
+    // 24/7 Mode Configuration
+    TWENTYFOUR_SEVEN: {
+        ENABLE_AUTO_REJOIN: true,
+        CHECK_INTERVAL: 300000,
+        IDLE_TIMEOUT: 3600000,
+        ENABLE_KEEP_ALIVE: true
     }
 };

@@ -75,7 +75,96 @@ async function handleFallbackSearch(message, query, loadingMsg, guildSettings, m
     try {
         let results;
         
-        if (ytdl.validateURL(query)) {
+        if (query.includes('spotify.com/track/')) {
+            try {
+                const { getYouTubeUrlFromSpotify } = require('./spotify');
+                const spotifyInfo = await getYouTubeUrlFromSpotify(query);
+                
+                const searchResults = await getCachedSearchResults(spotifyInfo.searchQuery, 1);
+                if (searchResults && searchResults.length > 0) {
+                    results = [{
+                        title: spotifyInfo.title,
+                        author: spotifyInfo.artist,
+                        url: searchResults[0].url,
+                        duration: spotifyInfo.duration,
+                        thumbnail: spotifyInfo.thumbnail || searchResults[0].thumbnail?.url,
+                        spotifyUrl: spotifyInfo.spotifyUrl
+                    }];
+                    console.log(`✅ Spotify track found: ${spotifyInfo.title} by ${spotifyInfo.artist}`);
+                }
+            } catch (error) {
+                console.error('Spotify track fetch failed:', error.message);
+                const embed = new EmbedBuilder()
+                    .setTitle(`${config.EMOJIS.ERROR} Spotify Error`)
+                    .setDescription(`Spotify integration error: ${error.message}\n\nMake sure Spotify integration is properly connected!`)
+                    .setColor(config.COLORS.ERROR);
+                return await loadingMsg.edit({ embeds: [embed] });
+            }
+        }
+        else if (query.includes('spotify.com/playlist/')) {
+            try {
+                const { searchSpotifyPlaylist } = require('./spotify');
+                const playlistInfo = await searchSpotifyPlaylist(query);
+                
+                const embed = new EmbedBuilder()
+                    .setTitle(`${config.EMOJIS.MUSIC} Loading Spotify Playlist`)
+                    .setDescription(`**${playlistInfo.playlistName}**\n\nAdding ${playlistInfo.tracks.length} tracks to queue...`)
+                    .setColor(config.COLORS.INFO);
+                await loadingMsg.edit({ embeds: [embed] });
+                
+                const queue = getQueue(message.guild.id);
+                let addedCount = 0;
+                
+                for (const spotifyTrack of playlistInfo.tracks.slice(0, 50)) {
+                    try {
+                        const searchResults = await getCachedSearchResults(spotifyTrack.searchQuery, 1);
+                        if (searchResults && searchResults.length > 0) {
+                            const track = {
+                                title: spotifyTrack.title,
+                                author: spotifyTrack.artist,
+                                url: searchResults[0].url,
+                                duration: spotifyTrack.duration,
+                                thumbnail: spotifyTrack.thumbnail || searchResults[0].thumbnail?.url,
+                                source: 'spotify',
+                                requester: message.author,
+                                spotifyUrl: spotifyTrack.spotifyUrl
+                            };
+                            
+                            if (!queue.nowPlaying && addedCount === 0) {
+                                queue.nowPlaying = track;
+                                let player = global.audioPlayers.get(message.guild.id);
+                                if (!player) {
+                                    player = await createFallbackPlayer(message.guild.id, message.member.voice.channel, message.channel);
+                                }
+                                if (player) {
+                                    await playFallbackTrack(message.guild.id, track);
+                                }
+                            } else {
+                                queue.add(track);
+                            }
+                            addedCount++;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to add track ${spotifyTrack.title}:`, error.message);
+                    }
+                }
+                
+                const successEmbed = new EmbedBuilder()
+                    .setTitle(`${config.EMOJIS.SUCCESS} Playlist Added`)
+                    .setDescription(`**${playlistInfo.playlistName}**\n\nAdded ${addedCount} tracks from Spotify playlist!`)
+                    .setColor(config.COLORS.SUCCESS);
+                return await loadingMsg.edit({ embeds: [successEmbed] });
+                
+            } catch (error) {
+                console.error('Spotify playlist fetch failed:', error.message);
+                const embed = new EmbedBuilder()
+                    .setTitle(`${config.EMOJIS.ERROR} Spotify Error`)
+                    .setDescription(`Failed to load Spotify playlist: ${error.message}`)
+                    .setColor(config.COLORS.ERROR);
+                return await loadingMsg.edit({ embeds: [embed] });
+            }
+        }
+        else if (ytdl.validateURL(query)) {
             try {
                 const info = await Promise.race([
                     ytdl.getInfo(query),

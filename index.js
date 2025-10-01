@@ -13,6 +13,9 @@ const path = require('path');
 // Start health check server for deployment
 require('./utils/health');
 
+// Initialize 24/7 Keep-Alive System
+const KeepAliveSystem = require('./utils/KeepAlive');
+
 // Initialize bot client
 const client = new Client({
     intents: [
@@ -22,6 +25,9 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
     ],
 });
+
+// Create keep-alive instance
+const keepAlive = new KeepAliveSystem(client);
 
 // Initialize global variables
 global.client = client;
@@ -99,6 +105,10 @@ client.on('ready', async () => {
     // Setup cache cleanup and idle cleanup
     setupCacheCleanup();
     setupIdleCleanup();
+
+    // Start 24/7 keep-alive system
+    keepAlive.start24_7Mode();
+    keepAlive.setupGracefulShutdown();
 });
 
 // Handle prefix and slash commands

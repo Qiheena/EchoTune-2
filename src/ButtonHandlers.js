@@ -151,22 +151,84 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 }
                 break;
 
+            case 'music_replay':
+                const replayPlayer = global.audioPlayers.get(interaction.guild.id);
+                if (replayPlayer && queue.nowPlaying) {
+                    replayPlayer.stop();
+                    await playFallbackTrack(interaction.guild.id, queue.nowPlaying);
+                    await interaction.editReply({ 
+                        content: `🔄 Replaying: **${queue.nowPlaying.info?.title || queue.nowPlaying.title}**`,
+                        ephemeral: true 
+                    });
+                } else {
+                    await interaction.editReply({ 
+                        content: '❌ No song to replay!',
+                        ephemeral: true 
+                    });
+                }
+                break;
+
+            case 'music_volume_up':
+                const currentVolumeUp = queue.volume || 0.5;
+                const newVolumeUp = Math.min(currentVolumeUp + 0.1, 1.0);
+                queue.volume = newVolumeUp;
+                const volumePlayerUp = global.audioPlayers.get(interaction.guild.id);
+                if (volumePlayerUp && volumePlayerUp.state.resource) {
+                    volumePlayerUp.state.resource.volume?.setVolume(newVolumeUp);
+                }
+                await interaction.editReply({ 
+                    content: `🔊 Volume increased to ${Math.round(newVolumeUp * 100)}%`,
+                    ephemeral: true 
+                });
+                break;
+
+            case 'music_volume_down':
+                const currentVolumeDown = queue.volume || 0.5;
+                const newVolumeDown = Math.max(currentVolumeDown - 0.1, 0);
+                queue.volume = newVolumeDown;
+                const volumePlayerDown = global.audioPlayers.get(interaction.guild.id);
+                if (volumePlayerDown && volumePlayerDown.state.resource) {
+                    volumePlayerDown.state.resource.volume?.setVolume(newVolumeDown);
+                }
+                await interaction.editReply({ 
+                    content: `🔉 Volume decreased to ${Math.round(newVolumeDown * 100)}%`,
+                    ephemeral: true 
+                });
+                break;
+
+            case 'music_clear_queue':
+                if (!queue.isEmpty()) {
+                    const clearedCount = queue.songs.length;
+                    queue.clear();
+                    await interaction.editReply({ 
+                        content: `🗑️ Cleared ${clearedCount} songs from queue!`,
+                        ephemeral: true 
+                    });
+                } else {
+                    await interaction.editReply({ 
+                        content: '📭 Queue is already empty!',
+                        ephemeral: true 
+                    });
+                }
+                break;
+
             default:
                 await interaction.editReply({ 
-                    content: 'Unknown button action!',
+                    content: '❌ Unknown button action!',
                     ephemeral: true 
                 });
         }
 
     } catch (error) {
-        console.error('Button interaction error:', error);
+        console.error('❌ Button interaction error:', error);
+        const errorMsg = error.message || 'Unknown error occurred';
         try {
             await interaction.editReply({ 
-                content: 'Error processing button action!',
+                content: `❌ Error: ${errorMsg}\n\nPlease try again or use slash commands instead.`,
                 ephemeral: true 
             });
         } catch (e) {
-            console.error('Error sending error reply:', e);
+            console.error('❌ Error sending error reply:', e);
         }
     }
 }
