@@ -23,8 +23,9 @@ async function handleButtonInteraction(interaction, guildSettings) {
 
         // Handle button actions
         switch (interaction.customId) {
+            case 'pause_resume':
             case 'music_pause':
-                const audioPlayer = global.audioPlayers.get(interaction.guild.id);
+                const audioPlayer = global.audioPlayers?.get(interaction.guild.id);
                 if (audioPlayer) {
                     if (audioPlayer.state.status === AudioPlayerStatus.Paused) {
                         audioPlayer.unpause();
@@ -47,8 +48,9 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 }
                 break;
 
+            case 'skip':
             case 'music_skip':
-                const player = global.audioPlayers.get(interaction.guild.id);
+                const player = global.audioPlayers?.get(interaction.guild.id);
                 if (player) {
                     player.stop(); // This will trigger the Idle event and play next
                     await interaction.editReply({ 
@@ -63,10 +65,21 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 }
                 break;
 
+            case 'stop':
             case 'music_stop':
-                const stopPlayer = global.audioPlayers.get(interaction.guild.id);
-                if (stopPlayer) stopPlayer.stop();
-                cleanupFallbackPlayer(interaction.guild.id);
+                const stopPlayer = global.audioPlayers?.get(interaction.guild.id);
+                if (stopPlayer) {
+                    try {
+                        stopPlayer.stop();
+                    } catch (e) {
+                        console.error('Stop player error:', e.message);
+                    }
+                }
+                try {
+                    cleanupFallbackPlayer(interaction.guild.id);
+                } catch (e) {
+                    console.error('Cleanup error:', e.message);
+                }
                 queue.clear();
                 queue.nowPlaying = null;
                 await interaction.editReply({ 
@@ -75,6 +88,7 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 });
                 break;
 
+            case 'shuffle':
             case 'music_shuffle':
                 if (queue.isEmpty()) {
                     await interaction.editReply({ 
@@ -90,6 +104,7 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 }
                 break;
 
+            case 'loop':
             case 'music_loop':
                 queue.loop = !queue.loop;
                 await interaction.editReply({ 
@@ -98,6 +113,7 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 });
                 break;
 
+            case 'autoplay':
             case 'music_autoplay':
                 queue.autoplay = !queue.autoplay;
                 await interaction.editReply({ 
@@ -106,6 +122,7 @@ async function handleButtonInteraction(interaction, guildSettings) {
                 });
                 break;
 
+            case 'queue':
             case 'music_queue':
                 let queueText = '';
                 if (queue.nowPlaying) {

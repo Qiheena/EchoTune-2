@@ -313,6 +313,13 @@ async function handleSlashCommand(interaction, guildSettings) {
         // Check if command file exists
         if (fs.existsSync(commandFile)) {
             const command = require(commandFile);
+            
+            // Validate command structure
+            if (!command.execute || typeof command.execute !== 'function') {
+                throw new Error(`Command ${commandName} is missing execute function`);
+            }
+            
+            // Execute command
             await command.execute(interaction);
         } else {
             // Fallback for commands that don't have slash command files
@@ -322,8 +329,8 @@ async function handleSlashCommand(interaction, guildSettings) {
             });
         }
     } catch (error) {
-        console.error(`Error executing slash command ${commandName}:`, error);
-        const errorMsg = error.message || 'Unknown error occurred';
+        console.error(`❌ Error executing slash command ${commandName}:`, error);
+        const errorMsg = error.message?.slice(0, 200) || 'Unknown error occurred';
         
         try {
             if (interaction.deferred || interaction.replied) {
@@ -338,7 +345,7 @@ async function handleSlashCommand(interaction, guildSettings) {
                 });
             }
         } catch (e) {
-            console.error('Error sending error reply:', e);
+            console.error('❌ Failed to send error reply:', e.message);
         }
     }
 }
@@ -348,19 +355,33 @@ async function registerSlashCommands() {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     
     const commands = [];
-    const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
+    let registeredCount = 0;
+    let failedCount = 0;
+    
+    const commandsPath = path.join(__dirname, 'commands');
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    
+    console.log(`📂 Found ${commandFiles.length} command files`);
     
     for (const file of commandFiles) {
         try {
-            const command = require(path.join(__dirname, 'commands', file));
-            if (command.data) {
+            const command = require(path.join(commandsPath, file));
+            
+            // Validate command structure
+            if (command.data && typeof command.data.toJSON === 'function') {
                 commands.push(command.data.toJSON());
-                console.log(`📝 Registered slash command: /${command.data.name}`);
+                registeredCount++;
+                console.log(`  ✅ ${command.data.name}`);
+            } else {
+                console.log(`  ⏭️ ${file} - No slash command data`);
             }
         } catch (error) {
-            console.error(`⚠️ Failed to load command ${file}:`, error.message);
+            failedCount++;
+            console.error(`  ❌ ${file} - ${error.message}`);
         }
     }
+    
+    console.log(`\n📊 Summary: ${registeredCount} registered, ${failedCount} failed, ${commandFiles.length - registeredCount - failedCount} skipped`);
 
     try {
         console.log('🔄 Refreshing application commands...');
