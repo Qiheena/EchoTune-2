@@ -128,38 +128,45 @@ async function playFallbackTrack(guildId, track) {
             return false;
         }
 
-        // Method 1: Try ytdl-core first (works best with Discord voice)
+        // Method 1: Try play-dl first (best for Discord, no 403 errors)
         try {
-            console.log(`[${guildId}] 🎵 Attempting ytdl-core for: ${track.title}`);
-            const info = await ytdl.getBasicInfo(track.url);
-            if (info && info.videoDetails) {
+            console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
+            
+            // Validate and setup play-dl if needed
+            if (!play.is_expired()) {
+                await play.refreshToken();
+            }
+            
+            const playStream = await play.stream(track.url, {
+                quality: 2
+            });
+            
+            stream = playStream.stream;
+            stream.type = playStream.type;
+            console.log(`[${guildId}] ✅ Got stream from play-dl`);
+        } catch (error) {
+            console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
+        }
+
+        // Method 2: Fallback to ytdl-core (if play-dl fails)
+        if (!stream) {
+            try {
+                console.log(`[${guildId}] 🎵 Attempting ytdl-core for: ${track.title}`);
                 stream = ytdl(track.url, {
                     filter: 'audioonly',
                     quality: 'highestaudio',
                     highWaterMark: 1 << 25,
-                    dlChunkSize: 0
+                    dlChunkSize: 0,
+                    requestOptions: {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                        }
+                    }
                 });
                 console.log(`[${guildId}] ✅ Got stream from ytdl-core`);
-            }
-        } catch (error) {
-            console.log(`[${guildId}] ❌ ytdl-core failed: ${error.message}`);
-        }
-
-        // Method 2: Fallback to play-dl (if ytdl-core fails)
-        if (!stream) {
-            try {
-                console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
-                const info = await play.video_info(track.url);
-                if (info && info.video_details) {
-                    const playStream = await play.stream(track.url, {
-                        quality: 2,
-                        discordPlayerCompatibility: true
-                    });
-                    stream = playStream.stream;
-                    console.log(`[${guildId}] ✅ Got stream from play-dl`);
-                }
             } catch (error) {
-                console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
+                console.log(`[${guildId}] ❌ ytdl-core failed: ${error.message}`);
             }
         }
 
