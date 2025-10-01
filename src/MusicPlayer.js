@@ -61,11 +61,28 @@ async function createFallbackPlayer(guildId, voiceChannel, textChannel) {
         global.audioPlayers.set(guildId, player);
 
         player.on(AudioPlayerStatus.Idle, () => {
+            console.log(`[${guildId}] 🔇 Player went idle`);
             handleFallbackTrackEnd(guildId);
         });
 
+        player.on(AudioPlayerStatus.Playing, () => {
+            console.log(`[${guildId}] ▶️ Player status: Playing`);
+        });
+
+        player.on(AudioPlayerStatus.Paused, () => {
+            console.log(`[${guildId}] ⏸️ Player status: Paused`);
+        });
+
+        player.on(AudioPlayerStatus.Buffering, () => {
+            console.log(`[${guildId}] 📶 Player status: Buffering`);
+        });
+
         player.on('error', (error) => {
-            console.error(`Fallback player error: ${error.message}`);
+            console.error(`[${guildId}] ❌ Player error: ${error.message}`);
+            console.error(`[${guildId}] Error stack: ${error.stack}`);
+            if (error.resource) {
+                console.error(`[${guildId}] Resource metadata:`, error.resource.metadata);
+            }
             if (error.message.includes('403') || error.message.includes('Status code: 403')) {
                 notifyStreamingError(guildId, 'youtube_blocked');
             } else {
@@ -219,23 +236,48 @@ async function playFallbackTrack(guildId, track) {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                         'Range': 'bytes=0-'
-                    }
+                    },
+                    timeout: 30000
+                });
+                
+                console.log(`[${guildId}] 📊 Response status: ${response.status}, Content-Type: ${response.headers['content-type']}`);
+                
+                response.data.on('error', (streamError) => {
+                    console.error(`[${guildId}] ❌ Stream error: ${streamError.message}`);
+                });
+                
+                response.data.on('end', () => {
+                    console.log(`[${guildId}] 🏁 Stream ended`);
                 });
                 
                 resource = createAudioResource(response.data, { 
                     inlineVolume: true,
-                    inputType: 'arbitrary'
+                    inputType: 'arbitrary',
+                    metadata: {
+                        title: track.title,
+                        url: track.url
+                    }
                 });
                 console.log(`[${guildId}] ✅ Audio resource created from URL`);
             } else {
                 resource = createAudioResource(stream, { 
                     inputType: stream.type, 
-                    inlineVolume: true 
+                    inlineVolume: true,
+                    metadata: {
+                        title: track.title,
+                        url: track.url
+                    }
                 });
                 console.log(`[${guildId}] ✅ Audio resource created from stream`);
             }
+            
+            resource.playStream.on('error', (streamError) => {
+                console.error(`[${guildId}] ❌ PlayStream error: ${streamError.message}`);
+            });
+            
         } catch (resourceError) {
             console.error(`[${guildId}] ❌ Failed to create audio resource: ${resourceError.message}`);
+            console.error(`[${guildId}] Stack: ${resourceError.stack}`);
             cleanupGarbageFiles(guildId);
             return false;
         }
@@ -247,7 +289,11 @@ async function playFallbackTrack(guildId, track) {
 
         try {
             player.play(resource);
-            console.log(`[${guildId}] ▶️ Started playing audio`);
+            console.log(`[${guildId}] ▶️ Player.play() called successfully`);
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log(`[${guildId}] 🎵 Player state after 1s: ${player.state.status}`);
+            
             return true;
         } catch (playError) {
             console.error(`[${guildId}] ❌ Player.play() failed: ${playError.message}`);
