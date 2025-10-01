@@ -2,6 +2,7 @@ const { Client, Collection, GatewayIntentBits, EmbedBuilder, REST, Routes } = re
 const { initDatabase, getGuildSettings, logCommand } = require('./src/database');
 const { getQueue } = require('./utils/QueueManager');
 const { getCachedGuildSettings, setupCacheCleanup } = require('./utils/CacheManager');
+const { setupDistube } = require('./src/DistubePlayer');
 // Removed Lavalink dependency for better reliability
 const { handlePlayCommand, handleSkipCommand, handleStopCommand, handleQueueCommand, handleStatusCommand, handleHelpCommand, handlePauseCommand, handleResumeCommand, handleVolumeCommand, handleJoinCommand, handleLeaveCommand, handleLoopCommand, handleShuffleCommand, handleClearCommand, handleRemoveCommand, handleMoveCommand, handleNowPlayingCommand, handleAutoplayCommand } = require('./src/CommandHandlers');
 const { handleButtonInteraction } = require('./src/ButtonHandlers');
@@ -31,6 +32,9 @@ global.connections = new Map();
 global.guildSettingsCache = new Map();
 global.searchResultsCache = new Map();
 global.lastCacheClean = Date.now();
+
+// Initialize DisTube for reliable music playback
+global.distube = setupDistube(client);
 
 // Make getQueue globally available
 global.getQueue = getQueue;
