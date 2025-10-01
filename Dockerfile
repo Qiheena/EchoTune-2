@@ -24,11 +24,11 @@ RUN pip install --no-cache-dir yt-dlp
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy only package files first for caching
 COPY package*.json ./
 
-# Install Node.js dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install Node.js dependencies (production only)
+RUN npm install --only=production && npm cache clean --force
 
 # Copy application code
 COPY . .
