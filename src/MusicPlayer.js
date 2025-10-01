@@ -1,5 +1,4 @@
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
-// Removed LavalinkManager for better reliability
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
 const ytdl = require('@distube/ytdl-core');
 const play = require('play-dl');
 const YouTube = require('youtube-sr').default;
@@ -7,10 +6,6 @@ const { getCachedSearchResults } = require('../utils/CacheManager');
 const { toUnifiedTrack, createNowPlayingEmbed } = require('../utils/TrackHelpers');
 const { getGuildSettings } = require('./database');
 const config = require('../config/botConfig');
-
-// Using enhanced fallback system only - more reliable for production
-let lavalinkManager = null;
-let lavalinkAvailable = false;
 
 // Enhanced streaming functions for reliable music playback
 async function createFallbackPlayer(guildId, voiceChannel, textChannel) {
@@ -21,10 +16,28 @@ async function createFallbackPlayer(guildId, voiceChannel, textChannel) {
             adapterCreator: voiceChannel.guild.voiceAdapterCreator,
         });
 
+        // Wait for connection to be ready before proceeding
+        try {
+            await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+            console.log(`✅ Voice connection ready for guild ${guildId}`);
+        } catch (error) {
+            console.error(`❌ Connection failed to become ready: ${error.message}`);
+            connection.destroy();
+            return null;
+        }
+
         // Handle connection state changes with proper cleanup
-        connection.on(VoiceConnectionStatus.Disconnected, () => {
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
             console.log(`🔌 Voice connection disconnected for guild ${guildId}`);
-            setTimeout(() => cleanupFallbackPlayer(guildId), 100);
+            try {
+                await Promise.race([
+                    entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+                    entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+                ]);
+            } catch (error) {
+                console.log(`Connection couldn't reconnect, destroying...`);
+                connection.destroy();
+            }
         });
 
         connection.on(VoiceConnectionStatus.Destroyed, () => {
@@ -39,8 +52,6 @@ async function createFallbackPlayer(guildId, voiceChannel, textChannel) {
                 }
             }
             global.connections.delete(guildId);
-            const queue = global.getQueue(guildId);
-            if (queue) queue.clear();
         });
 
         const player = createAudioPlayer();

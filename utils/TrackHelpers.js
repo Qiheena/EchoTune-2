@@ -2,35 +2,19 @@ const config = require('../config/botConfig');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 // Normalize track format for consistent UI
-function toUnifiedTrack(track, source = 'lavalink') {
-    if (source === 'lavalink') {
-        return {
-            info: {
-                title: track.info.title,
-                author: track.info.author,
-                length: track.info.length,
-                artworkUrl: track.info.artworkUrl,
-                thumbnail: track.info.thumbnail
-            },
-            requester: track.requester,
-            url: track.info.uri || track.url,
-            source: track.info.sourceName || 'lavalink',
-            encoded: track.encoded
-        };
-    } else {
-        return {
-            info: {
-                title: track.title,
-                author: track.author,
-                length: (track.duration || 0) * 1000,
-                artworkUrl: track.thumbnail,
-                thumbnail: track.thumbnail
-            },
-            requester: track.requester,
-            url: track.url,
-            source: track.source || 'fallback'
-        };
-    }
+function toUnifiedTrack(track, source = 'fallback') {
+    return {
+        info: {
+            title: track.info?.title || track.title,
+            author: track.info?.author || track.author,
+            length: track.info?.length || (track.duration || 0) * 1000,
+            artworkUrl: track.info?.artworkUrl || track.thumbnail,
+            thumbnail: track.info?.thumbnail || track.thumbnail
+        },
+        requester: track.requester,
+        url: track.info?.uri || track.url,
+        source: track.source || 'youtube'
+    };
 }
 
 // Create enhanced now playing embed with buttons

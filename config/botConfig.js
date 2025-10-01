@@ -8,15 +8,6 @@ module.exports = {
         OWNER_IDS: ['YOUR_USER_ID'], // Add your Discord user ID here
     },
 
-    // Lavalink Configuration
-    LAVALINK: {
-        HOST: 'localhost',
-        PORT: 2333,
-        PASSWORD: 'youshallnotpass',
-        SECURE: false,
-        IDENTIFIER: 'main-node'
-    },
-
     // Command Aliases
     ALIASES: {
         // Play commands

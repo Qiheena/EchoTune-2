@@ -18,8 +18,18 @@ const server = http.createServer((req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-server.listen(port, () => {
-    console.log(`📊 Health check server running on port ${port}`);
+server.listen(port, '0.0.0.0', (err) => {
+    if (err) {
+        console.log(`⚠️ Health check server could not start on port ${port}:`, err.message);
+    } else {
+        console.log(`📊 Health check server running on port ${port}`);
+    }
+}).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log(`⚠️ Port ${port} already in use, skipping health server`);
+    } else {
+        console.log(`⚠️ Health server error:`, err.message);
+    }
 });
 
 module.exports = server;
