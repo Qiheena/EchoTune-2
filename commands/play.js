@@ -1,15 +1,15 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
-// const ytdl = require('ytdl-core');
 const ytdl = require('@distube/ytdl-core');
 const fs = require('fs');
+const path = require('path');
 
 // Helper function to parse cookies.txt
 function parseCookiesTxt(filePath) {
     const cookies = [];
     try {
         const content = fs.readFileSync(filePath, 'utf8');
-        content.split(/\r?\n/).forEach((line, index) => {
+        content.split(/\r?\n/).forEach(line => {
             if (!line || line.startsWith('#')) return;
             const parts = line.split('\t');
             if (parts.length >= 7) {
@@ -19,10 +19,12 @@ function parseCookiesTxt(filePath) {
     } catch (err) {
         console.error(`[ERROR] Failed to read cookies.txt: ${err.message}`);
     }
-    return cookies.join('; '); // ytdl-core expects cookies as a single string
+    return cookies.join('; ');
 }
 
-const cookies = parseCookiesTxt('cookies.txt'); // Make sure cookies.txt is in the same folder
+// Load cookies once at startup
+const cookiesPath = path.join(__dirname, 'cookies.txt');
+const cookies = parseCookiesTxt(cookiesPath);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -50,16 +52,14 @@ module.exports = {
 
         try {
             await distube.play(voiceChannel, query, {
-                member: member,
+                member,
                 textChannel: interaction.channel,
                 ytdlOptions: {
                     quality: 'highestaudio',
                     filter: 'audioonly',
                     highWaterMark: 1 << 25,
                     requestOptions: {
-                        headers: {
-                            cookie: cookies // Pass cookies here
-                        }
+                        headers: cookies ? { cookie: cookies } : {} // fallback
                     }
                 }
             });
