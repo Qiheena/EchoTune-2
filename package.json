@@ -50,7 +50,8 @@
     "soundcloud-downloader": "^1.0.0",
     "tweetnacl": "^1.0.3",
     "youtube-dl-exec": "^3.0.25",
-    "youtube-sr": "^4.3.12"
+    "youtube-sr": "^4.3.12",
+    "express": "^4.21.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"
