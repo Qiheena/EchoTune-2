@@ -135,6 +135,7 @@ async function playFallbackTrack(guildId, track) {
             const info = await Promise.race([
                 youtubedl(track.url, {
                     dumpSingleJson: true,
+                    format: 'bestaudio',
                     noCheckCertificates: true,
                     noWarnings: true,
                     preferFreeFormats: true,
@@ -143,15 +144,26 @@ async function playFallbackTrack(guildId, track) {
                         'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     ]
                 }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('yt-dlp timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('yt-dlp timeout')), 15000))
             ]);
             
+            let directUrl = null;
+            
             if (info && info.url) {
+                directUrl = info.url;
+            } else if (info && info.formats && info.formats.length > 0) {
+                const audioFormat = info.formats.find(f => f.acodec !== 'none' && f.vcodec === 'none') || info.formats[0];
+                directUrl = audioFormat.url;
+            }
+            
+            if (directUrl) {
+                console.log(`[${guildId}] 📥 Got direct URL from yt-dlp, streaming...`);
                 const axios = require('axios');
                 const response = await axios({
                     method: 'get',
-                    url: info.url,
+                    url: directUrl,
                     responseType: 'stream',
+                    timeout: 10000,
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     }
