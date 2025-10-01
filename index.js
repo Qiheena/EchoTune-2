@@ -347,30 +347,20 @@ async function handleSlashCommand(interaction, guildSettings) {
 async function registerSlashCommands() {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     
-    const commands = [
-        {
-            name: 'play',
-            description: 'Play a song from YouTube or search',
-            options: [{
-                name: 'query',
-                description: 'Song name or YouTube URL',
-                type: 3, // STRING
-                required: true
-            }]
-        },
-        {
-            name: 'skip',
-            description: 'Skip the current song'
-        },
-        {
-            name: 'queue',
-            description: 'Show the current queue'
-        },
-        {
-            name: 'stop',
-            description: 'Stop music and clear queue'
+    const commands = [];
+    const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
+    
+    for (const file of commandFiles) {
+        try {
+            const command = require(path.join(__dirname, 'commands', file));
+            if (command.data) {
+                commands.push(command.data.toJSON());
+                console.log(`📝 Registered slash command: /${command.data.name}`);
+            }
+        } catch (error) {
+            console.error(`⚠️ Failed to load command ${file}:`, error.message);
         }
-    ];
+    }
 
     try {
         console.log('🔄 Refreshing application commands...');

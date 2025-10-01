@@ -66,13 +66,13 @@ module.exports = {
                     inline: true
                 },
                 {
-                    name: `⚙️ Server Settings (Admin Only)`,
-                    value: `\`/settings view\` - View settings\n` +
-                          `\`/settings prefix\` - Change prefix\n` +
-                          `\`/settings volume\` - Default volume\n` +
-                          `\`/settings language\` - Set language\n` +
-                          `\`/settings djmode\` - DJ mode toggle\n` +
-                          `\`/settings djrole\` - Set DJ role`,
+                    name: `⚙️ Other Commands`,
+                    value: `\`/status\` \`${prefix}stat\` - Bot status & uptime\n` +
+                          `\`/search <query>\` - Search YouTube\n` +
+                          `\`/playlist <url>\` - Add playlist\n` +
+                          `\`/seek <seconds>\` - Seek to position\n` +
+                          `\`/replay\` - Replay current song\n` +
+                          `\`/settings\` - Server settings`,
                     inline: true
                 },
                 {
