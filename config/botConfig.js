@@ -34,13 +34,13 @@ module.exports = {
         'repeat': 'loop',
         
         // Stop commands
+        'st': 'stop',
         'stp': 'stop',
         'halt': 'stop',
         'disconnect': 'stop',
         'dc': 'stop',
         
         // Status commands
-        'st': 'status',
         'stat': 'status',
         'ping': 'status',
         

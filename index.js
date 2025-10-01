@@ -214,6 +214,7 @@ async function handleCommand(command, message, args, guildSettings) {
             break;
         
         case 'stop':
+        case 'st':
         case 'stp':
             await handleStopCommand(message, guildSettings);
             break;
@@ -302,10 +303,44 @@ async function handleCommand(command, message, args, guildSettings) {
     }
 }
 
-// Slash command handler (basic implementation)
+// Slash command handler with proper routing
 async function handleSlashCommand(interaction, guildSettings) {
-    // Basic slash command support - can be expanded
-    await interaction.reply({ content: 'Slash commands coming soon! Use prefix commands for now.', ephemeral: true });
+    const commandName = interaction.commandName;
+    const commandsPath = path.join(__dirname, 'commands');
+    const commandFile = path.join(commandsPath, `${commandName}.js`);
+    
+    try {
+        // Check if command file exists
+        if (fs.existsSync(commandFile)) {
+            const command = require(commandFile);
+            await command.execute(interaction);
+        } else {
+            // Fallback for commands that don't have slash command files
+            await interaction.reply({ 
+                content: `⚠️ Slash command \`/${commandName}\` is not fully implemented yet.\n\nPlease use prefix command: \`${guildSettings.prefix}${commandName}\``,
+                ephemeral: true 
+            });
+        }
+    } catch (error) {
+        console.error(`Error executing slash command ${commandName}:`, error);
+        const errorMsg = error.message || 'Unknown error occurred';
+        
+        try {
+            if (interaction.deferred || interaction.replied) {
+                await interaction.followUp({ 
+                    content: `❌ Error: ${errorMsg}`,
+                    ephemeral: true 
+                });
+            } else {
+                await interaction.reply({ 
+                    content: `❌ Error: ${errorMsg}`,
+                    ephemeral: true 
+                });
+            }
+        } catch (e) {
+            console.error('Error sending error reply:', e);
+        }
+    }
 }
 
 // Register slash commands
