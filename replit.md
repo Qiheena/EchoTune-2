@@ -8,12 +8,12 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 01, 2025)
 
-**🚀 LATEST UPDATE - OPTIMIZED STREAMING SYSTEM:**
-- ✅ **Fast Response Time** - Removed unnecessary delays for instant playback
-- ✅ **Dual-Method Streaming** - Optimized fallback chain: play-dl → ytdl-core
+**🚀 LATEST UPDATE - FIXED YOUTUBE BLOCKS & OPTIMIZED:**
+- ✅ **YouTube Block Bypass** - yt-dlp extracts direct audio URLs to bypass 403 errors
+- ✅ **Fast & Reliable** - Triple fallback: yt-dlp → play-dl → ytdl-core
 - ✅ **Spotify/SoundCloud Support** - Auto-converts non-YouTube URLs to YouTube equivalents
-- ✅ **Smart Timeout Handling** - 8-second timeout on play-dl with automatic fallback
-- ✅ **Reliable Playback** - Battle-tested libraries with proper error handling
+- ✅ **Smart Streaming** - Direct URL extraction with axios for stable playback
+- ✅ **No More Decipher Errors** - Completely bypasses YouTube's broken decipher function
 
 **🎵 PREVIOUS UPDATES:**
 - ✅ **New Command: /lyrics** - Get lyrics for current or specified songs using lyrics.ovh API
