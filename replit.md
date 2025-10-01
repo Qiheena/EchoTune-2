@@ -8,15 +8,17 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (October 01, 2025)
 
-**🚀 FRESH SETUP COMPLETED & OPTIMIZED:**
-- ✅ **Node.js 20 Installed** - Configured with all required dependencies  
-- ✅ **FFmpeg & yt-dlp Installed** - Audio processing and fast YouTube streaming
-- ✅ **NPM Packages Installed** - 183 packages (removed unused lavalink-client)
-- ✅ **Workflow Configured** - Discord bot running in console mode
-- ✅ **Deployment Ready** - VM deployment configured + Render.yaml created
-- ✅ **Database Ready** - SQLite database initialized at `src/ragabot.db`
+**🚀 LATEST UPDATE - CRITICAL BUG FIXES & NEW FEATURES:**
+- ✅ **FIXED AUTO-DISCONNECT BUG** - Bot no longer leaves after joining! HTTP stream handling fixed for yt-dlp URLs
+- ✅ **Improved Error Handling** - Better error messages in Hindi/English with cleanup on failure
+- ✅ **New Command: /lyrics** - Get lyrics for current or specified songs using lyrics.ovh API
+- ✅ **New Command: /replay** - Restart current song from beginning
+- ✅ **New Command: /favorite** - Save, list, play, and manage favorite songs with SQLite persistence
+- ✅ **Updated Help Command** - Reorganized with proper formatting and accurate feature documentation
+- ✅ **Enhanced Logging** - Comprehensive logging throughout playback flow for easier debugging
+- ✅ **Axios Integration** - Now using axios for robust HTTP stream handling from yt-dlp
 
-**🔧 CRITICAL FIXES APPLIED:**
+**🔧 PREVIOUS FIXES:**
 - ✅ **Fixed Voice Connection Issues** - Added proper Ready state waiting (20s timeout)
 - ✅ **Fixed Bot Leaving Bug** - Proper reconnection logic on disconnect
 - ✅ **Fixed Health Server Conflict** - Added error handling for port conflicts
@@ -37,10 +39,10 @@ To start the bot, you need to add your Discord Bot Token:
 - Deploy as a Web Service (it has health check endpoint)
 
 **📋 WORKING COMMANDS (All Tested):**
-- **Music Control**: !play, !skip, !pause, !resume, !stop, !volume, !join, !leave
-- **Queue Management**: !queue, !shuffle, !loop, !move, !remove, !clear
-- **Info Commands**: !nowplaying (!np, !current), !status, !help
-- **Special Features**: !autoplay (!ap) for related song suggestions
+- **Music Control**: /play, /skip, /pause, /resume, /stop, /volume, /join, /leave
+- **Queue Management**: /queue, /search, /playlist, /nowplaying, /status
+- **New Commands**: /lyrics, /replay, /favorite (add/list/play/remove)
+- **Special Features**: All slash commands registered and working with proper error handling
 
 **🎛️ BUTTON CONTROLS (All Working):**
 - ⏸️/▶️ Pause/Resume button
