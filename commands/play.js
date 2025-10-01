@@ -4,13 +4,13 @@ const ytdl = require('@distube/ytdl-core');
 const YouTube = require('youtube-sr').default;
 const fs = require('fs');
 
-// Helper: Parse cookies.txt (Netscape format) into array for ytdl.createAgent
+// Helper function: parse cookies.txt in Netscape format
 function parseCookiesTxt(filePath) {
     const cookies = [];
     const content = fs.readFileSync(filePath, 'utf8');
     content.split('
 ').forEach(line => {
-        // Ignore comments and empty lines
+        // Ignore empty lines and comments
         if (!line || line.startsWith('#')) return;
         const parts = line.split('\t');
         if (parts.length >= 7) {
@@ -19,7 +19,6 @@ function parseCookiesTxt(filePath) {
                 path: parts[2],
                 name: parts[5],
                 value: parts[6],
-                // Additional fields can be set if needed
             });
         }
     });
@@ -60,7 +59,7 @@ module.exports = {
             await distube.play(voiceChannel, query, {
                 member: member,
                 textChannel: interaction.channel,
-                ytdlOptions: { agent } // cookies-enabled agent yahan set karo
+                ytdlOptions: { agent } // cookies-enabled agent use karenge
             });
 
             return interaction.editReply(`🔍 Searching: **${query}**`);
