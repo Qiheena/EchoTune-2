@@ -4,14 +4,18 @@ FROM node:20-slim
 # Install system dependencies for audio processing
 RUN apt-get update && apt-get install -y \
     python3 \
-    python3-pip \
+    python3-venv \
     ffmpeg \
     wget \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp for YouTube downloads
-RUN pip3 install --no-cache-dir yt-dlp
+# Create a Python virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install yt-dlp inside the venv
+RUN pip install --no-cache-dir yt-dlp
 
 # Set working directory
 WORKDIR /app
