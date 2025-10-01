@@ -105,6 +105,9 @@ async function playFallbackTrack(guildId, track) {
     try {
         let stream = null;
         const youtubedl = require('youtube-dl-exec');
+        const { exec } = require('child_process');
+        const { promisify } = require('util');
+        const execAsync = promisify(exec);
         
         // Ensure we have a valid URL
         if (!track.url || track.url.includes('youtube.com') || track.url.includes('youtu.be')) {
@@ -128,27 +131,47 @@ async function playFallbackTrack(guildId, track) {
             return false;
         }
 
-        // Method 1: Try play-dl first (best for Discord, no 403 errors)
+        // Method 1: Try yt-dlp first (BEST - most reliable, bypasses YouTube blocks)
         try {
-            console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
+            console.log(`[${guildId}] 🎵 Attempting yt-dlp for: ${track.title}`);
             
-            // Validate and setup play-dl if needed
-            if (!play.is_expired()) {
-                await play.refreshToken();
-            }
-            
-            const playStream = await play.stream(track.url, {
-                quality: 2
+            const ytdlpStream = youtubedl.exec(track.url, {
+                output: '-',
+                format: 'bestaudio',
+                noCheckCertificates: true,
+                noWarnings: true,
+                preferFreeFormats: true,
+                addHeader: [
+                    'referer:youtube.com',
+                    'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                ],
+                quiet: true
             });
             
-            stream = playStream.stream;
-            stream.type = playStream.type;
-            console.log(`[${guildId}] ✅ Got stream from play-dl`);
+            stream = ytdlpStream.stdout;
+            console.log(`[${guildId}] ✅ Got stream from yt-dlp`);
         } catch (error) {
-            console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
+            console.log(`[${guildId}] ❌ yt-dlp failed: ${error.message}`);
         }
 
-        // Method 2: Fallback to ytdl-core (if play-dl fails)
+        // Method 2: Try play-dl as backup
+        if (!stream) {
+            try {
+                console.log(`[${guildId}] 🎵 Attempting play-dl for: ${track.title}`);
+                
+                const playStream = await play.stream(track.url, {
+                    quality: 2
+                });
+                
+                stream = playStream.stream;
+                stream.type = playStream.type;
+                console.log(`[${guildId}] ✅ Got stream from play-dl`);
+            } catch (error) {
+                console.log(`[${guildId}] ❌ play-dl failed: ${error.message}`);
+            }
+        }
+
+        // Method 3: Last resort - ytdl-core
         if (!stream) {
             try {
                 console.log(`[${guildId}] 🎵 Attempting ytdl-core for: ${track.title}`);
@@ -191,7 +214,7 @@ async function playFallbackTrack(guildId, track) {
                 });
                 console.log(`[${guildId}] ✅ Audio resource created from play-dl stream`);
             } else {
-                // ytdl-core stream
+                // yt-dlp or ytdl-core stream
                 resource = createAudioResource(stream, { 
                     inlineVolume: true,
                     metadata: {
@@ -199,7 +222,7 @@ async function playFallbackTrack(guildId, track) {
                         url: track.url
                     }
                 });
-                console.log(`[${guildId}] ✅ Audio resource created from ytdl-core stream`);
+                console.log(`[${guildId}] ✅ Audio resource created successfully`);
             }
             
         } catch (resourceError) {
@@ -214,19 +237,10 @@ async function playFallbackTrack(guildId, track) {
             resource.volume.setVolume(queue.volume / 100);
         }
 
-        try {
-            player.play(resource);
-            console.log(`[${guildId}] ▶️ Player.play() called successfully`);
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log(`[${guildId}] 🎵 Player state after 1s: ${player.state.status}`);
-            
-            return true;
-        } catch (playError) {
-            console.error(`[${guildId}] ❌ Player.play() failed: ${playError.message}`);
-            cleanupGarbageFiles(guildId);
-            return false;
-        }
+        player.play(resource);
+        console.log(`[${guildId}] ▶️ Playing now!`);
+        
+        return true;
 
     } catch (error) {
         console.error(`[${guildId}] Playback error:`, error.message);
